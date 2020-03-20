@@ -1,0 +1,111 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-plugin-ETCLocation" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>cordova-plugin-ETCLocation</name>
+    <description>高速项目后台位置上传服务插件</description>
+    <repo>https://github.com/jbavari/cordova-plugin-video-editor.git</repo>
+    <license>MIT for iOS, GPL for Android, Apache 2.0 for Windows</license>
+
+    <preference name="API_KEY" />
+
+    <js-module name="ETCLocation" src="www/ETCLocation.js">
+        <clobbers target="ETCLocation" />
+    </js-module>
+     
+    <engines>
+        <engine name="cordova" version=">=6.0.0" />
+    </engines>
+
+	<!-- <dependency id="cordova-plugin-file" /> -->
+
+    <!-- android -->
+    <platform name="android">
+        <edit-config file="AndroidManifest.xml" target="/manifest/uses-sdk" mode="merge">
+            <uses-sdk android:minSdkVersion="18" android:maxSdkVersion="28" />
+        </edit-config>
+
+        <config-file target="config.xml" parent="/*">
+            <feature name="ETCLocation">
+                <param name="android-package" value="com.talkweb.etc.ETCLocationPlugin" />
+            </feature>
+        </config-file>
+
+        <!-- add plugin class -->
+        <source-file src="src/android/com/talkweb/etc/ETCLocationPlugin.java" target-dir="src/com/talkweb/etc" />
+        <source-file src="src/android/com/talkweb/etc/GPSService.java" target-dir="src/com/talkweb/etc" />
+        <source-file src="src/android/com/talkweb/etc/GPSLocationListener.java" target-dir="src/com/talkweb/etc" />
+        <source-file src="src/android/com/talkweb/etc/Utils.java" target-dir="src/com/talkweb/etc" />
+        <source-file src="src/android/com/talkweb/etc/VMDaemonJobService.java" target-dir="src/com/talkweb/etc" />
+        <source-file src="src/android/com/talkweb/etc/BootCompletedReceiver.java" target-dir="src/com/talkweb/etc" />
+        <source-file src="src/android/com/talkweb/etc/HeartbeatTask.java" target-dir="src/com/talkweb/etc" />
+        <source-file src="src/android/com/talkweb/etc/JobService.java" target-dir="src/com/talkweb/etc" />
+        
+        <framework src="src/android/com/talkweb/etc/etcLocation.gradle" custom="true" type="gradleReference"/>
+
+         <!-- lib SDK -->
+        <source-file src="src/android/lib/BaiduLBS_Android.jar" target-dir="libs" />
+        <source-file src="src/android/lib/org.apache.http.legacy.jar" target-dir="libs" />
+        <source-file src="src/android/lib/armeabi/liblocSDK7b.so" target-dir="libs/armeabi" />
+        <source-file src="src/android/lib/armeabi-v7a/liblocSDK7b.so" target-dir="libs/armeabi-v7a" />
+        <source-file src="src/android/lib/arm64-v8a/liblocSDK7b.so" target-dir="libs/arm64-v8a" />
+
+        <!-- permission config -->
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.INTERNET" />
+              <!-- 这个权限用于进行网络定位-->
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
+            <!-- 这个权限用于访问GPS定位-->
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
+            <!-- 用于访问wifi网络信息，wifi信息会用于进行网络定位-->
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"></uses-permission>
+            <!-- 获取运营商信息，用于支持提供运营商信息相关的接口-->
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
+            <!-- 这个权限用于获取wifi的获取权限，wifi信息会用来进行网络定位-->
+            <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"></uses-permission>
+            <!-- 用于读取手机当前的状态-->
+            <uses-permission android:name="android.permission.READ_PHONE_STATE"></uses-permission>
+            <!-- 写入扩展存储，向扩展卡写入数据，用于写入离线定位数据-->
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
+            <!-- 访问网络，网络定位需要上网-->
+            <uses-permission android:name="android.permission.INTERNET" />
+            <!-- SD卡读取权限，用户写入离线定位数据-->
+            <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"></uses-permission>
+            <!-- 写外部存储 -->
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <!-- 重启 -->
+            <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+            <uses-permission android:name="android.permission.WRITE_MEDIA_STORAGE" />
+        </config-file>
+
+
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+              <receiver android:name="com.talkweb.etc.BootCompletedReceiver" android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+                    <intent-filter>
+                        <action android:name="android.intent.action.BOOT_COMPLETED" />
+                    </intent-filter>
+                    <intent-filter>
+                        <action android:name="RestartSerivcesForSystemEventReceiver" />
+                    </intent-filter>
+                    <intent-filter>
+                        <action android:name="android.intent.action.MEDIA_MOUNTED" />
+                        <action android:name="android.intent.action.MEDIA_UNMOUNTED" />
+                        <action android:name="android.intent.action.MEDIA_EJECT" />
+                        <data android:scheme="file" />
+                    </intent-filter>
+              </receiver>
+
+              <service android:name="com.talkweb.etc.GPSService" />
+              <!-- 在application标签中声明service组件,每个app拥有自己单独的定位service -->
+              <service android:name="com.baidu.location.f" android:enabled="true" android:process=":remote" />
+
+              <!-- 周期 守护进程 -->
+              <service
+                    android:name="com.talkweb.etc.VMDaemonJobService"  
+                    android:permission="android.permission.BIND_JOB_SERVICE"/>
+              <service android:name="com.talkweb.etc.JobService" android:permission="android.permission.BIND_JOB_SERVICE" />
+              <meta-data android:name="com.baidu.lbsapi.API_KEY" android:value="$API_KEY" />
+        </config-file>
+    </platform>
+ 
+
+</plugin>
