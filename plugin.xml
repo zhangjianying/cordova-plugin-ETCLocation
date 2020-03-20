@@ -19,9 +19,9 @@
 
     <!-- android -->
     <platform name="android">
-        <edit-config file="AndroidManifest.xml" target="/manifest/uses-sdk" mode="merge">
+        <!-- <edit-config file="AndroidManifest.xml" target="/manifest/uses-sdk" mode="merge">
             <uses-sdk android:minSdkVersion="18" android:maxSdkVersion="28" />
-        </edit-config>
+        </edit-config> -->
 
         <config-file target="config.xml" parent="/*">
             <feature name="ETCLocation">

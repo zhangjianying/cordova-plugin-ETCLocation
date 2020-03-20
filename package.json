@@ -1,32 +1,27 @@
 {
   "name": "cordova-plugin-etclocation",
   "version": "1.0.0",
-  "description": "高速项目后台位置上传服务插件",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "description": "utils.",
   "cordova": {
     "id": "cordova-plugin-etclocation",
     "platforms": [
       "android"
     ]
   },
-  "keywords": [
-    "cordova"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zhangjianying/cordova-plugin-ETCLocation.git"
   },
-  "contributors": [
+  "keywords": [
+    "ecosystem:cordova"
+  ],
+  "engines": [
     {
-      "name": "zhangjianying",
-      "web": "http://blog.csdn.net/zhangjianying",
-      "email": "21961252@qq.com"
+      "name": "cordova",
+      "version": ">=5.0.0"
     }
   ],
-  "keywords": [],
   "author": "zhangjianying",
-  "license": "MIT",
-  "homepage": "https://github.com/zhangjianying/cordova-plugin-ETCLocation"
+  "license": "BSD"
 }
+
