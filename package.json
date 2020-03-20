@@ -1,12 +1,12 @@
 {
-  "name": "cordova-plugin-ETCLocation",
+  "name": "cordova-plugin-etclocation",
   "version": "1.0.0",
   "description": "高速项目后台位置上传服务插件",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "cordova": {
-    "id": "cordova-plugin-ETCLocation",
+    "id": "cordova-plugin-etclocation",
     "platforms": [
       "android"
     ]

@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="cordova-plugin-ETCLocation" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
-    <name>cordova-plugin-ETCLocation</name>
+<plugin id="cordova-plugin-etclocation" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>cordova-plugin-etclocation</name>
     <description>高速项目后台位置上传服务插件</description>
     <repo>https://github.com/zhangjianying/cordova-plugin-ETCLocation.git</repo>
     <license>MIT for iOS, GPL for Android, Apache 2.0 for Windows</license>
