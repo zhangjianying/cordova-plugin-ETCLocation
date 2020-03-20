@@ -2,7 +2,7 @@
 <plugin id="cordova-plugin-ETCLocation" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>cordova-plugin-ETCLocation</name>
     <description>高速项目后台位置上传服务插件</description>
-    <repo>https://github.com/jbavari/cordova-plugin-video-editor.git</repo>
+    <repo>https://github.com/zhangjianying/cordova-plugin-ETCLocation.git</repo>
     <license>MIT for iOS, GPL for Android, Apache 2.0 for Windows</license>
 
     <preference name="API_KEY" />
