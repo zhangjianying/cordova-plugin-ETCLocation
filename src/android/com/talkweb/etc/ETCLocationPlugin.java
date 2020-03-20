@@ -105,7 +105,6 @@ public class ETCLocationPlugin extends CordovaPlugin {
 //			final int delayTime = params.getInt("delayTime"); // GPS获取间隔
 //			final String serverURL = params.getString("serverURL"); // 服务器提交接口地址 http://192.168.146.166:8888/kite/
 			String extendParams = params.getString("extendParams");// 扩展参数 json格式
-
 //			LOG.d(TAG, String.format("delayTime=%s  serverURL=%s   extendParams=%s", delayTime, serverURL,extendParams));
 			this.cordova.getThreadPool().execute(new Runnable() {
 				@Override
@@ -121,11 +120,13 @@ public class ETCLocationPlugin extends CordovaPlugin {
 		if ("saveExtendData".equalsIgnoreCase(action)) {
 			final CordovaInterface cordovaInterface = this.cordova;
 			final JSONObject params = this.dataObj.getJSONObject(0);
+			final CallbackContext _callBack = this.callback;
 			this.cordova.getThreadPool().execute(new Runnable() {
 				@Override
 				public void run() {
 					Log.i(TAG, "保存的扩展信息:"+params);
 					Utils.saveExtendData(cordovaInterface.getActivity(),params);
+					_callBack.success();
 				}
 			});
 			return true;
@@ -134,11 +135,13 @@ public class ETCLocationPlugin extends CordovaPlugin {
 		//删除保存的扩展信息
 		if ("deleteExtendData".equalsIgnoreCase(action)) {
 			final CordovaInterface cordovaInterface = this.cordova;
+			final CallbackContext _callBack = this.callback;
 			this.cordova.getThreadPool().execute(new Runnable() {
 				@Override
 				public void run() {
 					Log.i(TAG, "删除扩展信息:");
 					Utils.deleteExtendData(cordovaInterface.getActivity());
+					_callBack.success();
 				}
 			});
 			return true;
@@ -148,7 +151,12 @@ public class ETCLocationPlugin extends CordovaPlugin {
 		if ("getDeviceId".equalsIgnoreCase(action)) {
 			final CordovaInterface cordovaInterface = this.cordova;
 			final CallbackContext _callBack = this.callback;
-			this.callback.success(Utils.getFingerprint(cordovaInterface.getActivity()));
+			this.cordova.getThreadPool().execute(new Runnable() {
+				@Override
+				public void run() {
+					_callBack.success(Utils.getFingerprint(cordovaInterface.getActivity()));
+				}
+			});
 			return true;
 		}
 
@@ -164,8 +172,19 @@ public class ETCLocationPlugin extends CordovaPlugin {
 						try {
 							String taskType = params.getString("taskType");
 							String content = params.getString("content");
-							String fileName = Utils.saveOffLineData(cordovaInterface.getActivity(), taskType, content);
-							_callBack.success(fileName);
+							String saveFileName = params.getString("fileName");
+
+							if(TextUtils.isEmpty(taskType)){
+								_callBack.error("taskType is null");
+								return;
+							}
+							if(TextUtils.isEmpty(content)){
+								_callBack.error("content is null");
+								return;
+							}
+
+							String outFilePath = Utils.saveOffLineData(cordovaInterface.getActivity(), taskType,saveFileName, content);
+							_callBack.success(outFilePath);
 						} catch (JSONException e) {
 							e.printStackTrace();
 						}
@@ -173,6 +192,29 @@ public class ETCLocationPlugin extends CordovaPlugin {
 			});
 			return true;
 		}
+
+        // 读取离线文件
+        if("readOffLineDataByTaskType".equalsIgnoreCase(action)){
+            final CordovaInterface cordovaInterface = this.cordova;
+            final CallbackContext _callBack = this.callback;
+
+            final JSONObject params = this.dataObj.getJSONObject(0);
+            this.cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String taskType = params.getString("taskType");
+                        String fileName = params.getString("fileName");
+                        String fileContent = Utils.readOffLineDataByTaskType(cordovaInterface.getActivity(), taskType,fileName);
+                        _callBack.success(fileContent);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            return true;
+        }
+
 
 		// 读取离线文件
 		if("readOffLineData".equalsIgnoreCase(action)){
@@ -206,16 +248,19 @@ public class ETCLocationPlugin extends CordovaPlugin {
                 public void run() {
                     try {
                         String taskType = params.getString("taskType");
-                        File[] fileListByTaskType = Utils.getFileListByTaskType(cordovaInterface.getActivity(), taskType);
+						String extension = params.getString("extension");
+						Log.d(TAG,"taskType:"+taskType +"  extension:"+extension);
+                        File[] fileListByTaskType = Utils.getFileListByTaskType(cordovaInterface.getActivity(), taskType,extension);
 
                         JSONArray retList = new JSONArray();
                         for(File file : fileListByTaskType){
                             retList.put(file.getPath());
                         }
-
+						Log.e(TAG,"返回文件数:"+retList.length());
                         _callBack.success(retList);
                     } catch (JSONException e) {
                         e.printStackTrace();
+						_callBack.error(e.getMessage());
                     }
                 }
             });

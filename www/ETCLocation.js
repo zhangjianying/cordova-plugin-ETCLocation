@@ -65,7 +65,9 @@ ETCLocation.prototype.getDeviceId = function(success, error) {
 ETCLocation.prototype.saveOffLineData = function(success, error,options) {
   var parmas={
     taskType:options.taskType||'default',
-    content:options.content||''
+    content:options.content||'',
+    fileName:options.fileName||'',
+    
   }
   exec(success, error, pluginName, 'saveOffLineData', [parmas]);
 };
@@ -83,11 +85,25 @@ ETCLocation.prototype.readOffLineData = function(success, error,options) {
 
 
 /**
+ * 读取离线文件 根据TaskType类型读取文件
+ */
+ETCLocation.prototype.readOffLineDataByTaskType = function(success, error,options) {
+  var parmas={
+    taskType:options.taskType||'default',
+    fileName:options.fileName||''
+  }
+  exec(success, error, pluginName, 'readOffLineDataByTaskType', [parmas]);
+};
+
+
+
+/**
  * 获取TaskType下所有文件列表
  */
 ETCLocation.prototype.getFileListByTaskType = function(success, error,options) {
   var parmas={
     taskType:options.taskType||'default',
+    extension:options.extension||'.d',
   }
   exec(success, error, pluginName, 'getFileListByTaskType', [parmas]);
 };

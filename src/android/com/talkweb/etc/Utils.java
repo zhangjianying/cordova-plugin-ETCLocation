@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import static android.content.Context.ACTIVITY_SERVICE;
@@ -79,6 +80,11 @@ public class Utils {
         }
         String version = packInfo.versionName;
         return version;
+    }
+
+    public static String readOffLineDataByTaskType(Context context,String taskType,String fileName){
+        String extendDataFilePath = getFilePath(context, taskType);
+        return readOffLineData(context,extendDataFilePath+'/'+fileName);
     }
 
     /**
@@ -141,7 +147,7 @@ public class Utils {
      * @param content   内容
      * @return  返回文件路径
      */
-    public static String saveOffLineData(Context context,String taskType,String content){
+    public static String saveOffLineData(Context context,String taskType,String fileName,String content){
         if(TextUtils.isEmpty(taskType)){
                return null;
         }
@@ -155,9 +161,14 @@ public class Utils {
         FileOutputStream out = null;
         try {
             File dir = new File(extendDataFilePath);
+            if(!dir.exists()){
+                dir.mkdirs();
+            }
             //临时文件名
-            String tmpName =  System.currentTimeMillis() + ".d"; //临时文件名
-            file = new File(dir, tmpName);
+            if(TextUtils.isEmpty(fileName)){
+                fileName =  System.currentTimeMillis() + ".d"; //临时文件名
+            }
+            file = new File(dir, fileName);
             if (file.exists()) {
                 file.delete();
             }
@@ -369,19 +380,21 @@ public class Utils {
      */
     public static File[] getGPSUPloadFiles(Context context){
         String saveGPSFilePath = Utils.getFilePath(context,GPSLocationListener.GPS_SAVE_DIR);
-        return getFileList(saveGPSFilePath);
+        return getFileList(saveGPSFilePath,".g"); // gps文件后缀是g
     }
 
 
     /*
      获取 taskType目录下所有文件列表
      */
-    public static File[] getFileListByTaskType(Context context,String taskType){
+    public static File[] getFileListByTaskType(Context context,String taskType,String extension){
+        Log.d(TAG,"=====================  getFileListByTaskType () =============== ");
         if(TextUtils.isEmpty(taskType)){
             return null;
         }
         String rootFilePath = getFilePath(context, taskType);
-        return getFileList(rootFilePath);
+        Log.d(TAG,"rootFilePath: "+rootFilePath);
+        return getFileList(rootFilePath,extension);
     }
 
 
@@ -390,7 +403,8 @@ public class Utils {
      * @param path
      * @return
      */
-    public static File[] getFileList(String path){
+    public static File[] getFileList(String path,String extension){
+        Log.d(TAG,"=====================  getFileList() =============== ");
         if(TextUtils.isEmpty(path)){
             return null;
         }
@@ -399,7 +413,31 @@ public class Utils {
         if(!dirPath.exists()){
             return null;
         }
-        return dirPath.listFiles();
+        File[] dirFiles = dirPath.listFiles();
+
+        ArrayList<File> fileArraysList = new ArrayList<File>();
+        for(File tmpFile : dirFiles){
+            Log.d(TAG,"tmpFile: "+tmpFile);
+            if(tmpFile.exists()){
+                if(tmpFile.isDirectory()){ //如果是文件夹  跳过
+                    continue;
+                }
+
+                if(TextUtils.isEmpty(extension)){
+                    fileArraysList.add(tmpFile);
+                }else{
+                    String fileName = tmpFile.getName();
+                    String fileSuffix = fileName.substring(fileName.lastIndexOf("."));//得到后缀
+                    Log.d(TAG,"fileName:"+fileName+" extension:"+extension +"   fileSuffix:"+fileSuffix);
+                    if(extension.equalsIgnoreCase(fileSuffix)){
+                        fileArraysList.add(tmpFile);
+                    }
+                }
+
+            }
+        }
+
+        return fileArraysList.toArray(new File[fileArraysList.size()]);
     }
 
 
