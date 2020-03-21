@@ -61,6 +61,7 @@ public class GPSService extends Service {
     private void initTask(){
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Log.i(TAG,"initTask()");
             startJobScheduler();
         }else{
             executor.scheduleWithFixedDelay(new HeartbeatTask("reportGPS",this.getApplicationContext()), 2, 5, TimeUnit.SECONDS);

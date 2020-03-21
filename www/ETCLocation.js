@@ -60,27 +60,104 @@ ETCLocation.prototype.getDeviceId = function(success, error) {
 
 
 /**
+ * 按指定长度分段字符串
+ * @param str 传入的字符串(非空)
+ * @param num 指定长度(正整数)
+ * @returns Array(字符串数组)
+ */
+function fixedLengthFormatString(str,num){
+  if(str == null || str == undefined) return null;
+  if(!(/^[0-9]*[1-9][0-9]*$/.test(num))) return null;
+  var array = new Array();
+  var len = str.length;
+  for(var i=0;i<(len/num);i++){
+    if((i+1)*num > len){
+    array.push(str.substring(i*num,len));
+}else{
+    array.push(str.substring(i*num,(i+1)*num));
+}
+  }
+  return array;
+}
+
+
+
+/**
  * 保存离线文件
  */
-ETCLocation.prototype.saveOffLineData = function(success, error,options) {
-  var parmas={
-    taskType:options.taskType||'default',
-    content:options.content||'',
-    fileName:options.fileName||'',
-    
+ETCLocation.prototype.saveOffLineData = async function(success, error,options) {
+
+  var content = options.content||'';
+  if(!content){
+    alert('保存内容长度为0')
+    return;
   }
-  exec(success, error, pluginName, 'saveOffLineData', [parmas]);
+
+  var maxSpliceLength = 1024*5;  //最大分割字符数  5k 保存一次
+  var fixedArray = fixedLengthFormatString(content,maxSpliceLength);
+
+  var isSuccess = true;
+  var mfilePath = '';
+  for(var j = 0,len = fixedArray.length; j < len; j++){
+    var parmas={
+      taskType:options.taskType||'default',
+      content:fixedArray[j],
+      fileName:options.fileName||'',
+      isAppend:j===0?false:true,
+    }
+    await execSync(function(filePath){
+      mfilePath =filePath;
+    },function(err){
+      isSuccess=false
+    },pluginName, 'saveOffLineData', [parmas]);
+  }
+
+  if(isSuccess){
+    success(mfilePath);
+  }else{
+    error('save fail');
+  }
 };
 
+function execSync(success,fail,pluginName,method,paramArray){
+  return new Promise(function(resolve) {
+    exec(function(retVal){
+      success(retVal);
+      resolve(retVal);
+    }, function(err){
+      fail(err);
+      resolve(err);
+    }, pluginName, method, paramArray);
+  });
+}
+
+function readDataBySync(parmas){
+  return new Promise(function(resolve) {
+    let fullContent = '';
+    exec(function(content){
+
+      if(content==='@@@end_content@@@'){
+        resolve(fullContent)
+      }
+      fullContent+=content;
+    }, function(err){
+    }, pluginName, 'readOffLineData', [parmas]);
+  });
+}
 
 /**
  * 读取离线文件
  */
-ETCLocation.prototype.readOffLineData = function(success, error,options) {
+ETCLocation.prototype.readOffLineData = async function(success, error,options) {
   var parmas={
     filePath:options.filePath||''
   }
-  exec(success, error, pluginName, 'readOffLineData', [parmas]);
+
+  //结果也是分批次回来 
+  let fullContent = await readDataBySync(parmas);
+  success(fullContent);
+  
+  // exec(success, error, pluginName, 'readOffLineData', [parmas]);
 };
 
 
@@ -140,6 +217,27 @@ ETCLocation.prototype.deleteFile = function(success, error,options) {
 };
 
 
+/**
+ * 获取目录大小
+ */
+ETCLocation.prototype.getTaskFolderSize = function(success, error,options) {
+  var parmas={
+    taskType:options.taskType||'',
+  }
+  exec(success, error, pluginName, 'getTaskFolderSize', [parmas]);
+};
+
+
+
+/**
+ * 删除目录
+ */
+ETCLocation.prototype.deleteTaskFolder = function(success, error,options) {
+  var parmas={
+    taskType:options.taskType||'',
+  }
+  exec(success, error, pluginName, 'deleteTaskFolder', [parmas]);
+};
 
 
 

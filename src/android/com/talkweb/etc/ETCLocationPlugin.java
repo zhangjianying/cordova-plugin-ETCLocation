@@ -15,12 +15,15 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.LOG;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
@@ -173,6 +176,7 @@ public class ETCLocationPlugin extends CordovaPlugin {
 							String taskType = params.getString("taskType");
 							String content = params.getString("content");
 							String saveFileName = params.getString("fileName");
+							Boolean isAppend = params.getBoolean("isAppend");
 
 							if(TextUtils.isEmpty(taskType)){
 								_callBack.error("taskType is null");
@@ -183,7 +187,7 @@ public class ETCLocationPlugin extends CordovaPlugin {
 								return;
 							}
 
-							String outFilePath = Utils.saveOffLineData(cordovaInterface.getActivity(), taskType,saveFileName, content);
+							String outFilePath = Utils.saveOffLineData(cordovaInterface.getActivity(), taskType,saveFileName, content,isAppend);
 							_callBack.success(outFilePath);
 						} catch (JSONException e) {
 							e.printStackTrace();
@@ -228,7 +232,18 @@ public class ETCLocationPlugin extends CordovaPlugin {
 					try {
 						String filePath = params.getString("filePath");
 						String fileContent = Utils.readOffLineData(cordovaInterface.getActivity(), filePath);
-						_callBack.success(fileContent);
+						Log.d(TAG,"fileContent = "+fileContent);
+						List<String> strList = Utils.getStrList(fileContent, 1024);
+						Log.d(TAG,"strList size() = "+strList.size());
+						for(String msg :strList){
+							PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, msg);
+							pluginResult.setKeepCallback(true);
+							_callBack.sendPluginResult(pluginResult);
+						}
+						PluginResult pluginResult2 = new PluginResult(PluginResult.Status.OK, "@@@end_content@@@");
+						pluginResult2.setKeepCallback(false);
+						_callBack.sendPluginResult(pluginResult2);
+//						_callBack.success(fileContent);
 					} catch (JSONException e) {
 						e.printStackTrace();
 					}
@@ -355,6 +370,69 @@ public class ETCLocationPlugin extends CordovaPlugin {
 			return true;
 		}
 
+
+        //获取文件夹大小
+        if("getTaskFolderSize".equalsIgnoreCase(action)){
+            final CordovaInterface cordovaInterface = this.cordova;
+            final CallbackContext _callBack = this.callback;
+            final JSONObject params = this.dataObj.getJSONObject(0);
+
+            this.cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String taskType = params.getString("taskType");
+
+
+                        if(TextUtils.isEmpty(taskType)){
+                            _callBack.error("taskType is null");
+                            return;
+                        }
+                        String folderSize = Utils.getFolderSizeByTaskType(cordovaInterface.getActivity(), taskType);
+
+                        JSONObject retVal = new JSONObject();
+                        retVal.put("taskType",taskType);
+                        retVal.put("size",folderSize);
+
+                        _callBack.success(retVal);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            return true;
+        }
+
+
+
+		//获取文件夹大小
+		if("deleteTaskFolder".equalsIgnoreCase(action)){
+			final CordovaInterface cordovaInterface = this.cordova;
+			final CallbackContext _callBack = this.callback;
+			final JSONObject params = this.dataObj.getJSONObject(0);
+
+			this.cordova.getThreadPool().execute(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						String taskType = params.getString("taskType");
+
+
+						if(TextUtils.isEmpty(taskType)){
+							_callBack.error("taskType is null");
+							return;
+						}
+						boolean isDeleteSuccess = Utils.deleteTaskFolder(cordovaInterface.getActivity(), taskType);
+						_callBack.success(Boolean.valueOf(isDeleteSuccess).toString());
+					} catch (JSONException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+			return true;
+		}
+
+
 		return false;
 	}
 
@@ -377,6 +455,9 @@ public class ETCLocationPlugin extends CordovaPlugin {
 		}
 
 	}
+
+
+
 
 	/**
 	 * 5.x以上系统启用 JobScheduler API 进行实现守护进程的唤醒操作

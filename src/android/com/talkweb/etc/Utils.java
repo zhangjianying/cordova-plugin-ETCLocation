@@ -20,17 +20,22 @@ import org.json.JSONObject;
 import org.w3c.dom.Text;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 
@@ -87,6 +92,7 @@ public class Utils {
         return readOffLineData(context,extendDataFilePath+'/'+fileName);
     }
 
+
     /**
      * 读取离线文件
      * @param context
@@ -100,7 +106,10 @@ public class Utils {
 
         String RetVal = null;
         File file = null;
-        FileInputStream input=null;
+        InputStreamReader read =null;
+        BufferedReader bufferedReader =null;
+        StringBuffer feedTypeStringBuffer=new StringBuffer();
+        String lineTxt = null;
         try{
             file = new File(filePath);
 
@@ -108,28 +117,26 @@ public class Utils {
                 Log.w(TAG,"文件:"+filePath+"  不存在");
                 return null;
             }
-
-            input = new FileInputStream(file);
-            byte[] buf = new byte[1024];
-            int length = 0;
-            //循环读取文件内容，输入流中将最多buf.length个字节的数据读入一个buf数组中,返回类型是读取到的字节数。
-            //当文件读取到结尾时返回 -1,循环结束。
-            while((length = input.read(buf)) != -1){
-                RetVal = new String(buf,0,length);
+            read = new InputStreamReader(new FileInputStream(file),"utf-8");
+            bufferedReader = new BufferedReader(read);
+            while ((lineTxt = bufferedReader.readLine())!=null){
+                feedTypeStringBuffer.append(lineTxt);
             }
-            //最后记得，关闭流
-            if(RetVal!=null){
-                byte[] decode = Base64.decode(RetVal, Base64.DEFAULT);
-                RetVal = new String(decode,FILE_ENCODE);
-            }
-
+            RetVal = feedTypeStringBuffer.toString();
         }catch(Exception ex){
             ex.printStackTrace();
             Log.e(TAG,ex.getMessage());
         }finally{
-            if (input != null) {
+            if (bufferedReader != null) {
                 try {
-                    input.close();
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (read != null) {
+                try {
+                    read.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -140,6 +147,59 @@ public class Utils {
     }
 
 
+//    /**
+//     * 读取离线文件
+//     * @param context
+//     * @param filePath 完整路径
+//     * @return
+//     */
+//    public static String readOffLineData(Context context,String filePath){
+//        if(TextUtils.isEmpty(filePath)){
+//            return null;
+//        }
+//
+//        String RetVal = null;
+//        File file = null;
+//        FileInputStream input=null;
+//        try{
+//            file = new File(filePath);
+//
+//            if(!file.exists()){
+//                Log.w(TAG,"文件:"+filePath+"  不存在");
+//                return null;
+//            }
+//
+//            input = new FileInputStream(file);
+//            byte[] buf = new byte[1024];
+//            int length = 0;
+//            //循环读取文件内容，输入流中将最多buf.length个字节的数据读入一个buf数组中,返回类型是读取到的字节数。
+//            //当文件读取到结尾时返回 -1,循环结束。
+//            while((length = input.read(buf)) != -1){
+//                RetVal = new String(buf,0,length);
+//            }
+//            //最后记得，关闭流
+////            if(RetVal!=null){
+////                byte[] decode = Base64.decode(RetVal, Base64.NO_WRAP);
+////                RetVal = new String(decode,FILE_ENCODE);
+////            }
+//
+//        }catch(Exception ex){
+//            ex.printStackTrace();
+//            Log.e(TAG,ex.getMessage());
+//        }finally{
+//            if (input != null) {
+//                try {
+//                    input.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//
+//        return RetVal;
+//    }
+
+
     /**
      * 写离线文件.
      * @param context
@@ -147,7 +207,7 @@ public class Utils {
      * @param content   内容
      * @return  返回文件路径
      */
-    public static String saveOffLineData(Context context,String taskType,String fileName,String content){
+    public static String saveOffLineData(Context context,String taskType,String fileName,String content,boolean isAppend){
         if(TextUtils.isEmpty(taskType)){
                return null;
         }
@@ -158,7 +218,7 @@ public class Utils {
 
         String RetVal = null;
         File file = null;
-        FileOutputStream out = null;
+        RandomAccessFile randomFile = null;
         try {
             File dir = new File(extendDataFilePath);
             if(!dir.exists()){
@@ -169,21 +229,28 @@ public class Utils {
                 fileName =  System.currentTimeMillis() + ".d"; //临时文件名
             }
             file = new File(dir, fileName);
-            if (file.exists()) {
+            if (!isAppend && file.exists()) {
                 file.delete();
             }
-            // 输入流
-            out = new FileOutputStream(file);
-            out.write(Base64.encode(content.getBytes(FILE_ENCODE), Base64.DEFAULT));
-            out.flush();
 
+            // 输入流
+            randomFile = new RandomAccessFile(file, "rw");
+
+            if(isAppend){ //如果是追加
+                // 文件长度，字节数
+                long fileLength = randomFile.length();
+                // 将写文件指针移到文件尾。
+                randomFile.seek(fileLength);
+            }
+//          randomFile.writeBytes(Base64.encodeToString(content.getBytes(FILE_ENCODE), Base64.NO_WRAP));
+            randomFile.writeBytes(content);
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG,e.getMessage());
         }finally {
-            if (out != null) {
+            if (randomFile != null) {
                 try {
-                    out.close();
+                    randomFile.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -191,6 +258,8 @@ public class Utils {
         }
         return file.getPath();
     }
+
+
 
 
     /**
@@ -214,7 +283,7 @@ public class Utils {
             }
 
             input = new FileInputStream(file);
-            byte[] buf = new byte[1024];
+            byte[] buf = new byte[1024*5];
             int length = 0;
             //循环读取文件内容，输入流中将最多buf.length个字节的数据读入一个buf数组中,返回类型是读取到的字节数。
             //当文件读取到结尾时返回 -1,循环结束。
@@ -223,7 +292,7 @@ public class Utils {
             }
             //最后记得，关闭流
             if(RetVal!=null){
-                byte[] decode = Base64.decode(RetVal, Base64.DEFAULT);
+                byte[] decode = Base64.decode(RetVal, Base64.NO_WRAP);
                 RetVal = new String(decode,FILE_ENCODE);
             }
 
@@ -292,7 +361,7 @@ public class Utils {
                 }
                 // 输入流
                 out = new FileOutputStream(file);
-                out.write(Base64.encode(josnObject.toString().getBytes(FILE_ENCODE), Base64.DEFAULT));
+                out.write(Base64.encode(josnObject.toString().getBytes(FILE_ENCODE), Base64.NO_WRAP));
                 out.flush();
 
 
@@ -347,7 +416,7 @@ public class Utils {
 
        try{
             input = new FileInputStream(readFile);
-            byte[] buf = new byte[1024];
+            byte[] buf = new byte[1024*5];
             int length = 0;
             //循环读取文件内容，输入流中将最多buf.length个字节的数据读入一个buf数组中,返回类型是读取到的字节数。
             //当文件读取到结尾时返回 -1,循环结束。
@@ -356,7 +425,7 @@ public class Utils {
             }
             //最后记得，关闭流
             if(RetVal!=null){
-                byte[] decode = Base64.decode(RetVal, Base64.DEFAULT);
+                byte[] decode = Base64.decode(RetVal, Base64.NO_WRAP);
                 RetVal = new String(decode,FILE_ENCODE);
             }
         }catch (Exception ex){
@@ -466,7 +535,7 @@ public class Utils {
                 }
                 // 输入流
                 out = new FileOutputStream(file);
-                out.write(Base64.encode(json.getBytes(FILE_ENCODE), Base64.DEFAULT));
+                out.write(Base64.encode(json.getBytes(FILE_ENCODE), Base64.NO_WRAP));
                 out.flush();
 
                 //写完文件以后 改名
@@ -710,6 +779,159 @@ public class Utils {
                 }
             }
         }
+    }
 
-}
+
+    /****
+     * 计算文件大小
+     *
+     * @param length
+     * @return
+     */
+    public static String showLongFileSize(Long length) {
+        if (length >= 1048576) {
+            return (length / 1048576) + "MB";
+        } else if (length >= 1024) {
+            return (length / 1024) + "KB";
+        } else if (length < 1024) {
+            return length + "B";
+        } else {
+            return "0KB";
+        }
+    }
+
+
+    /*
+     根据taskType现实目录大小
+     */
+    public static String getFolderSizeByTaskType(Context ctx , String taskType){
+        String rootFilePath = getFilePath(ctx, taskType);
+
+        long folderSize = getFolderSize(new File(rootFilePath));
+        return showLongFileSize(folderSize);
+    }
+
+    /**
+     * 删除文件夹
+     * @param ctx
+     * @param taskType
+     * @return
+     */
+    public static boolean deleteTaskFolder(Context ctx , String taskType){
+        String rootFilePath = getFilePath(ctx, taskType);
+
+        deleteFolderFile(rootFilePath,true);
+
+        return true;
+    }
+
+    /**
+     * 获取文件夹大小
+     *
+     * @param file File实例
+     * @return long
+     */
+    public static long getFolderSize(File file) {
+        long size = 0;
+        try {
+            File[] fileList = file.listFiles();
+            for (int i = 0; i < fileList.length; i++) {
+                if (fileList[i].isDirectory()) size = size + getFolderSize(fileList[i]);
+                else size = size + fileList[i].length();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return size;
+    }
+
+    /**
+     * 删除指定目录下文件及目录
+     *
+     * @param deleteThisPath
+     * @return
+     */
+    public static void deleteFolderFile(String filePath, boolean deleteThisPath) {
+        if (!TextUtils.isEmpty(filePath)) {
+            try {
+                File file = new File(filePath);
+                if (file.isDirectory()) {// 处理目录
+                    File files[] = file.listFiles();
+                    for (int i = 0; i < files.length; i++) {
+                        deleteFolderFile(files[i].getAbsolutePath(), true);
+                    }
+                }
+                if (deleteThisPath) {
+                    if (!file.isDirectory()) {// 如果是文件，删除
+                        file.delete();
+                    } else {// 目录
+                        file.delete();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * 把原始字符串分割成指定长度的字符串列表
+     *
+     * @param inputString
+     *            原始字符串
+     * @param length
+     *            指定长度
+     * @return
+     */
+    public static List<String> getStrList(String inputString, int length) {
+        int size = inputString.length() / length;
+        if (inputString.length() % length != 0) {
+            size += 1;
+        }
+        return getStrList(inputString, length, size);
+    }
+
+    /**
+     * 把原始字符串分割成指定长度的字符串列表
+     *
+     * @param inputString
+     *            原始字符串
+     * @param length
+     *            指定长度
+     * @param size
+     *            指定列表大小
+     * @return
+     */
+    public static List<String> getStrList(String inputString, int length,
+                                          int size) {
+        List<String> list = new ArrayList<String>();
+        for (int index = 0; index < size; index++) {
+            String childStr = substring(inputString, index * length,
+                    (index + 1) * length);
+            list.add(childStr);
+        }
+        return list;
+    }
+
+    /**
+     * 分割字符串，如果开始位置大于字符串长度，返回空
+     *
+     * @param str
+     *            原始字符串
+     * @param f
+     *            开始位置
+     * @param t
+     *            结束位置
+     * @return
+     */
+    public static String substring(String str, int f, int t) {
+        if (f > str.length())
+            return null;
+        if (t > str.length()) {
+            return str.substring(f, str.length());
+        } else {
+            return str.substring(f, t);
+        }
+    }
+
 }
