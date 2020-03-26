@@ -95,8 +95,9 @@ public class HeartbeatTask implements Runnable {
 
                 List<NameValuePair> params = new ArrayList<NameValuePair>();
                 params.add(new BasicNameValuePair("p", postData.toString()));
-                String retVal = this.doPost(params, "https://service.hngsetc.com/appportal/heartbeat");
-
+                // String retVal = this.doPost(params, "https://service.hngsetc.com/appportal/heartbeat");
+                String retVal = this.doPost(params, "http://114.115.160.214:20009/appportal-server/appportal/heartbeat.json");
+                
                 if(TextUtils.isEmpty(retVal)){
                     Log.w(TAG,"服务器接口返回出错(null)");
                     return;

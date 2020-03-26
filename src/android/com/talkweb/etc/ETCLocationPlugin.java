@@ -232,14 +232,18 @@ public class ETCLocationPlugin extends CordovaPlugin {
 					try {
 						String filePath = params.getString("filePath");
 						String fileContent = Utils.readOffLineData(cordovaInterface.getActivity(), filePath);
-						Log.d(TAG,"fileContent = "+fileContent);
-						List<String> strList = Utils.getStrList(fileContent, 1024);
-						Log.d(TAG,"strList size() = "+strList.size());
-						for(String msg :strList){
-							PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, msg);
-							pluginResult.setKeepCallback(true);
-							_callBack.sendPluginResult(pluginResult);
+
+						if(!TextUtils.isEmpty(fileContent)){
+							Log.d(TAG,"fileContent = "+fileContent);
+							List<String> strList = Utils.getStrList(fileContent, 1024);
+							Log.d(TAG,"strList size() = "+strList.size());
+							for(String msg :strList){
+								PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, msg);
+								pluginResult.setKeepCallback(true);
+								_callBack.sendPluginResult(pluginResult);
+							}
 						}
+
 						PluginResult pluginResult2 = new PluginResult(PluginResult.Status.OK, "@@@end_content@@@");
 						pluginResult2.setKeepCallback(false);
 						_callBack.sendPluginResult(pluginResult2);
@@ -464,7 +468,7 @@ public class ETCLocationPlugin extends CordovaPlugin {
 	 */
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	private void startJobScheduler() {
-		int jobId = 1;
+		int jobId = 5;
 		JobInfo.Builder jobInfo = new JobInfo.Builder(jobId, new ComponentName(this.cordova.getActivity(), VMDaemonJobService.class));
 		jobInfo.setMinimumLatency(TimeUnit.MINUTES.toMillis(5)); //执行的最小延迟时间
 		jobInfo.setOverrideDeadline(TimeUnit.MINUTES.toMillis(15));  //执行的最长延时时间

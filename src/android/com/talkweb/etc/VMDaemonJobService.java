@@ -54,7 +54,7 @@ public class VMDaemonJobService extends JobService {
     // 有些厂商禁用 周期任务
     private void doService() {
         JobScheduler jobScheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
-        JobInfo.Builder builder = new JobInfo.Builder(1, new ComponentName(this, VMDaemonJobService.class));  //指定哪个JobService执行操作
+        JobInfo.Builder builder = new JobInfo.Builder(5, new ComponentName(this, VMDaemonJobService.class));  //指定哪个JobService执行操作
         builder.setMinimumLatency(TimeUnit.MINUTES.toMillis(5)); //执行的最小延迟时间
         builder.setOverrideDeadline(TimeUnit.MINUTES.toMillis(15));  //执行的最长延时时间
         builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);  //非漫游网络状态
